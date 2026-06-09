@@ -32,3 +32,75 @@ def test_list_conversations_date_range():
     eng = next(c for c in result["conversations"] if c["id"] == "19:sp1@thread.skype")
     assert eng["dateRange"]["first"] == "2024-01-15T10:00:00+00:00"
     assert eng["dateRange"]["last"] == "2024-01-15T10:05:00+00:00"
+
+
+# --- get_messages ---
+
+def test_find_conversation_id_exact():
+    from teams_log_mcp.server import _find_conversation_id
+    assert _find_conversation_id(FIXTURE, "19:sp1@thread.skype") == "19:sp1@thread.skype"
+
+
+def test_find_conversation_id_substring():
+    from teams_log_mcp.server import _find_conversation_id
+    assert _find_conversation_id(FIXTURE, "engineering") == "19:sp1@thread.skype"
+
+
+def test_find_conversation_id_not_found():
+    from teams_log_mcp.server import _find_conversation_id
+    assert _find_conversation_id(FIXTURE, "zzznope") is None
+
+
+def test_get_messages_by_name_returns_note():
+    from teams_log_mcp.server import _get_messages
+    result = _get_messages(_cache(), "engineering")
+    assert result["conversationId"] == "19:sp1@thread.skype"
+    assert result["note"] == "Matched 'Engineering' for query 'engineering'"
+    assert result["messageCount"] == 2
+
+
+def test_get_messages_by_exact_id_no_note():
+    from teams_log_mcp.server import _get_messages
+    result = _get_messages(_cache(), "19:chat1@thread.skype")
+    assert result["note"] is None
+    assert result["messageCount"] == 1
+
+
+def test_get_messages_limit():
+    from teams_log_mcp.server import _get_messages
+    result = _get_messages(_cache(), "engineering", limit=1)
+    assert result["messageCount"] == 1
+    assert result["messages"][0]["id"] == "m1"
+
+
+def test_get_messages_after_filter():
+    from teams_log_mcp.server import _get_messages
+    result = _get_messages(_cache(), "engineering", after="2024-01-15T10:02:00+00:00")
+    assert result["messageCount"] == 1
+    assert result["messages"][0]["id"] == "m2"
+
+
+def test_get_messages_before_filter():
+    from teams_log_mcp.server import _get_messages
+    result = _get_messages(_cache(), "engineering", before="2024-01-15T10:02:00+00:00")
+    assert result["messageCount"] == 1
+    assert result["messages"][0]["id"] == "m1"
+
+
+def test_get_messages_not_found_returns_error():
+    from teams_log_mcp.server import _get_messages
+    result = _get_messages(_cache(), "zzznope")
+    assert "error" in result
+
+
+def test_get_messages_strips_html():
+    import copy
+    from unittest.mock import MagicMock
+    from tests.conftest import FIXTURE as F
+    data = copy.deepcopy(F)
+    data["messages_by_conv"]["19:sp1@thread.skype"][0]["content"] = "<p>Hello <b>team</b></p>"
+    c = MagicMock()
+    c.get.return_value = data
+    from teams_log_mcp.server import _get_messages
+    result = _get_messages(c, "19:sp1@thread.skype")
+    assert result["messages"][0]["content"] == "Hello team"

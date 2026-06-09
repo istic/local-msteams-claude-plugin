@@ -78,3 +78,57 @@ def list_conversations() -> dict:
     if cache is None:
         return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
     return _list_conversations(cache)
+
+
+# --- get_messages ---
+
+def _get_messages(
+    cache: TeamsCache,
+    conversation: str,
+    limit: int = 100,
+    before: str | None = None,
+    after: str | None = None,
+) -> dict:
+    data = cache.get()
+    conv_id = _find_conversation_id(data, conversation)
+    if conv_id is None:
+        return {"error": f"Conversation not found: {conversation!r}"}
+
+    msgs = list(data["messages_by_conv"].get(conv_id, []))
+    if after:
+        msgs = [m for m in msgs if m.get("timestamp") and m["timestamp"] > after]
+    if before:
+        msgs = [m for m in msgs if m.get("timestamp") and m["timestamp"] < before]
+    msgs = msgs[:min(limit, 500)]
+
+    display = data["display_names"].get(conv_id, conv_id)
+    note = f"Matched '{display}' for query {conversation!r}" if conv_id != conversation else None
+
+    return {
+        "conversationId": conv_id,
+        "displayName": display,
+        "note": note,
+        "messageCount": len(msgs),
+        "messages": _strip_content(msgs),
+    }
+
+
+@mcp.tool()
+def get_messages(
+    conversation: str,
+    limit: int = 100,
+    before: str | None = None,
+    after: str | None = None,
+) -> dict:
+    """Get messages from a Teams conversation by name or ID.
+
+    Args:
+        conversation: Conversation ID (exact) or display name (case-insensitive substring).
+        limit: Maximum messages to return (default 100, max 500).
+        before: Return only messages before this ISO 8601 timestamp.
+        after: Return only messages after this ISO 8601 timestamp.
+    """
+    cache = _get_cache()
+    if cache is None:
+        return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
+    return _get_messages(cache, conversation, limit=limit, before=before, after=after)
