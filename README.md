@@ -1,29 +1,39 @@
-# Teams Log MCP Desktop Extension
+# local-msteams-claude-plugin
 
-Exposes your Microsoft Teams conversation history to Claude Desktop via four MCP tools.
+Exposes your Microsoft Teams conversation history to Claude via four MCP tools. Works as a **Claude Code plugin** and a **Claude Desktop extension**.
 
 ## Prerequisites
 
 - [uv](https://docs.astral.sh/uv/) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Microsoft Teams desktop app (new Teams, WebView2-based)
 
-## Installing the DXT
+No manual path configuration needed — the Teams data directory is detected automatically from the OS.
 
-1. Download or build `teams-log.dxt` (see below).
-2. Open Claude Desktop → Settings → Extensions → Install from file.
-3. Select `teams-log.dxt`.
-4. When prompted, enter your Teams data path:
-   - **Windows:** `C:\Users\<you>\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams\EBWebView\WV2Profile_tfw`
-   - **macOS:** `~/Library/Containers/com.microsoft.teams2/Data/Library/Application Support/Microsoft/MSTeams/EBWebView/WV2Profile_tfw`
+## Install: Claude Code plugin
 
-## Building the DXT
+Add to `~/.claude/settings.json`:
 
-```bash
-poetry install
-poetry run build-dxt
+```json
+{
+  "extraKnownMarketplaces": {
+    "teams-log": {
+      "source": {
+        "source": "github",
+        "repo": "istic/local-msteams-claude-plugin"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "teams-log@teams-log": true
+  }
+}
 ```
 
-This produces `teams-log.dxt` in the project root.
+Then run `/reload-plugins` in Claude Code.
+
+## Install: Claude Desktop extension
+
+Download `teams-log.mcpb` from the [latest release](https://github.com/istic/local-msteams-claude-plugin/releases/latest) and open it with Claude Desktop.
 
 ## Available Tools
 
@@ -36,16 +46,27 @@ This produces `teams-log.dxt` in the project root.
 
 ## Data freshness
 
-The extension caches Teams data in memory for 5 minutes. Data is read directly from the Teams IndexedDB — no need to close Teams first.
+Data is read directly from the Teams IndexedDB cache — no need to close Teams. Results are cached in memory for 5 minutes.
 
 ## Development
 
 ```bash
-poetry install
-poetry run pytest tests/ --ignore=tests/test_integration.py
+uv sync
+uv run pytest tests/ --ignore=tests/test_integration.py
 ```
 
-For the integration test (requires Teams data):
+Integration test (requires Teams installed):
 ```bash
-TEAMS_ROOT=/path/to/WV2Profile_tfw poetry run pytest tests/test_integration.py -v -s
+uv run pytest tests/test_integration.py -v -s
+```
+
+Build release artifacts:
+```bash
+uv run build-dxt
+# outputs build/teams-log.zip (Claude Code) and build/teams-log.mcpb (Claude Desktop)
+```
+
+Releases are created automatically by GitHub Actions when a tag is pushed:
+```bash
+git tag v0.1.0 && git push origin v0.1.0
 ```
