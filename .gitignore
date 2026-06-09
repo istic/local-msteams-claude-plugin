@@ -4,5 +4,4 @@ build/
 __pycache__/
 *.pyc
 *.egg-info/
-uv.lock
 pylib/

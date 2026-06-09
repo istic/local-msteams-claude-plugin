@@ -44,7 +44,7 @@ jobs:
         run: uv run pytest tests/ --ignore=tests/test_integration.py -q
 
       - name: Build artifacts
-        run: uv run build-dxt
+        run: uv run python build_dxt.py
 
       - name: Create draft release
         uses: softprops/action-gh-release@v2

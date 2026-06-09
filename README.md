@@ -62,7 +62,7 @@ uv run pytest tests/test_integration.py -v -s
 
 Build release artifacts:
 ```bash
-uv run build-dxt
+uv run python build_dxt.py
 # outputs build/teams-log.zip (Claude Code) and build/teams-log.mcpb (Claude Desktop)
 ```
 
