@@ -34,6 +34,15 @@ jobs:
             echo "tag=${{ inputs.deploy_version }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Validate version matches tag
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "Error: tag $TAG does not match pyproject.toml version $VERSION"
+            exit 1
+          fi
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 

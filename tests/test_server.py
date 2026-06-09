@@ -443,3 +443,77 @@ def test_get_conversation_summary_propagates_cache_error():
     result = _get_conversation_summary(_error_cache(), "anything")
     assert "error" in result
     assert "DB load failed" in result["error"]
+
+
+# --- input validation ---
+
+
+def test_get_messages_zero_limit_returns_error():
+    from teams_log_mcp.server import _get_messages
+
+    result = _get_messages(_cache(), "engineering", limit=0)
+    assert "error" in result
+
+
+def test_get_messages_negative_limit_returns_error():
+    from teams_log_mcp.server import _get_messages
+
+    result = _get_messages(_cache(), "engineering", limit=-5)
+    assert "error" in result
+
+
+def test_get_messages_invalid_after_returns_error():
+    from teams_log_mcp.server import _get_messages
+
+    result = _get_messages(_cache(), "engineering", after="not-a-date")
+    assert "error" in result
+    assert "after" in result["error"]
+
+
+def test_get_messages_invalid_before_returns_error():
+    from teams_log_mcp.server import _get_messages
+
+    result = _get_messages(_cache(), "engineering", before="yesterday")
+    assert "error" in result
+    assert "before" in result["error"]
+
+
+def test_get_messages_valid_iso_timestamp_accepted():
+    from teams_log_mcp.server import _get_messages
+
+    result = _get_messages(_cache(), "engineering", after="2024-01-01T00:00:00+00:00")
+    assert "error" not in result
+
+
+def test_search_negative_limit_returns_error():
+    from teams_log_mcp.server import _search_messages
+
+    result = _search_messages(_cache(), "project", limit=-1)
+    assert "error" in result
+
+
+# --- ordering ---
+
+
+def test_search_results_sorted_by_timestamp():
+    import copy
+    from unittest.mock import MagicMock
+
+    from tests.conftest import FIXTURE as F
+
+    data = copy.deepcopy(F)
+    # m3 (chat, 2024-01-16) should sort after m1 (engineering, 2024-01-15)
+    c = MagicMock()
+    c.get.return_value = data
+    from teams_log_mcp.server import _search_messages
+
+    result = _search_messages(c, "project")
+    timestamps = [r["timestamp"] for r in result["results"] if r.get("timestamp")]
+    assert timestamps == sorted(timestamps)
+
+
+def test_summary_participants_are_sorted():
+    from teams_log_mcp.server import _get_conversation_summary
+
+    result = _get_conversation_summary(_cache(), "engineering")
+    assert result["participants"] == sorted(result["participants"])

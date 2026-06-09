@@ -1,4 +1,5 @@
 framework:
   - sast_python
   - github_actions
+  - secrets
 quiet: true

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import os
 import pathlib
 import platform
@@ -15,6 +16,9 @@ mcp = FastMCP("teams-log", instructions="Access Microsoft Teams conversation his
 _cache: TeamsCache | None = None
 
 _TYPE_ORDER = ["Space", "Topic", "Chat", "Meeting", "Thread"]
+_NO_TEAMS_ERROR = (
+    "Teams data not found. Ensure Microsoft Teams is installed and has been run at least once."
+)
 
 
 def _default_teams_root() -> str:
@@ -96,6 +100,15 @@ def _strip_content(messages: list[dict]) -> list[dict]:
     return [{**m, "content": _strip_html(m.get("content") or "")} for m in messages]
 
 
+def _parse_iso_timestamp(ts: str) -> bool:
+    """Return True if ts is a valid ISO 8601 timestamp."""
+    try:
+        datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        return True
+    except ValueError:
+        return False
+
+
 # --- list_conversations ---
 
 
@@ -135,7 +148,7 @@ def list_conversations() -> dict:
     """List all Teams chats, channels, and meetings with message counts and date ranges."""
     cache = _get_cache()
     if cache is None:
-        return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
+        return {"error": _NO_TEAMS_ERROR}
     return _list_conversations(cache)
 
 
@@ -149,6 +162,13 @@ def _get_messages(
     before: str | None = None,
     after: str | None = None,
 ) -> dict:
+    if limit <= 0:
+        return {"error": "limit must be a positive integer"}
+    if after and not _parse_iso_timestamp(after):
+        return {"error": f"Invalid ISO 8601 timestamp for 'after': {after!r}"}
+    if before and not _parse_iso_timestamp(before):
+        return {"error": f"Invalid ISO 8601 timestamp for 'before': {before!r}"}
+
     data = cache.get()
     if "error" in data:
         return {"error": f"Failed to load Teams data: {data['error']}"}
@@ -192,7 +212,7 @@ def get_messages(
     """
     cache = _get_cache()
     if cache is None:
-        return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
+        return {"error": _NO_TEAMS_ERROR}
     return _get_messages(cache, conversation, limit=limit, before=before, after=after)
 
 
@@ -205,6 +225,9 @@ def _search_messages(
     conversation: str | None = None,
     limit: int = 50,
 ) -> dict:
+    if limit <= 0:
+        return {"error": "limit must be a positive integer"}
+
     data = cache.get()
     if "error" in data:
         return {"error": f"Failed to load Teams data: {data['error']}"}
@@ -233,6 +256,8 @@ def _search_messages(
                     }
                 )
 
+    results.sort(key=lambda m: (m.get("timestamp") is None, m.get("timestamp") or ""))
+
     return {
         "query": query,
         "totalCount": len(results),
@@ -256,7 +281,7 @@ def search_messages(
     """
     cache = _get_cache()
     if cache is None:
-        return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
+        return {"error": _NO_TEAMS_ERROR}
     return _search_messages(cache, query, conversation=conversation, limit=limit)
 
 
@@ -276,13 +301,14 @@ def _get_conversation_summary(cache: TeamsCache, conversation: str) -> dict:
     display = data["display_names"].get(conv_id, conv_id)
     timestamps = [m["timestamp"] for m in msgs if m.get("timestamp")]
 
-    participants: list[str] = []
     seen: set[str] = set()
+    participants: list[str] = []
     for m in msgs:
         s = m.get("sender") or ""
         if s and s not in seen:
             participants.append(s)
             seen.add(s)
+    participants.sort()
 
     note = f"Matched '{display}' for query {conversation!r}" if conv_id != conversation else None
 
@@ -312,5 +338,5 @@ def get_conversation_summary(conversation: str) -> dict:
     """
     cache = _get_cache()
     if cache is None:
-        return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
+        return {"error": _NO_TEAMS_ERROR}
     return _get_conversation_summary(cache, conversation)

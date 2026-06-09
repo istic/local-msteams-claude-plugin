@@ -15,6 +15,9 @@ from ccl_chromium_reader import ccl_chromium_indexeddb
 
 def _safe_str(v: Any) -> Any:
     """Convert V8 Undefined and other special types to None for JSON."""
+    # _Undefined is a private class in ccl_chromium_reader representing the JS `undefined`
+    # value. It is not exported from the library, so we match by class name rather than
+    # isinstance(), which would require importing an unstable private symbol.
     if type(v).__name__ == "_Undefined":
         return None
     return v
@@ -212,9 +215,11 @@ class TeamsExporter:
             if msg:
                 by_conv[conv_id].append(msg)
 
-        # Sort each conversation's messages by timestamp
+        # Sort each conversation's messages by timestamp; None timestamps sort last
         for conv_id in by_conv:
-            by_conv[conv_id].sort(key=lambda m: m.get("timestamp") or "")
+            by_conv[conv_id].sort(
+                key=lambda m: (m.get("timestamp") is None, m.get("timestamp") or "")
+            )
 
         return dict(by_conv)
 
