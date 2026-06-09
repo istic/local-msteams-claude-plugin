@@ -17,7 +17,7 @@ INCLUDE = [
 ]
 
 _SKIP_SUFFIXES = {".pyc"}
-_SKIP_DIR_NAMES = {"__pycache__", ".git", ".egg-info"}
+_SKIP_DIR_NAMES = {"__pycache__", ".git", ".egg-info", "build"}
 
 
 def _should_skip(path: pathlib.Path) -> bool:
