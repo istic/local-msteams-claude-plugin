@@ -48,6 +48,8 @@ def _strip_content(messages: list[dict]) -> list[dict]:
 
 def _list_conversations(cache: TeamsCache) -> dict:
     data = cache.get()
+    if "error" in data:
+        return {"error": f"Failed to load Teams data: {data['error']}"}
     result = []
     for conv_id, conv in data["conversations"].items():
         msgs = data["messages_by_conv"].get(conv_id, [])
@@ -90,6 +92,8 @@ def _get_messages(
     after: str | None = None,
 ) -> dict:
     data = cache.get()
+    if "error" in data:
+        return {"error": f"Failed to load Teams data: {data['error']}"}
     conv_id = _find_conversation_id(data, conversation)
     if conv_id is None:
         return {"error": f"Conversation not found: {conversation!r}"}
@@ -143,6 +147,8 @@ def _search_messages(
     limit: int = 50,
 ) -> dict:
     data = cache.get()
+    if "error" in data:
+        return {"error": f"Failed to load Teams data: {data['error']}"}
     query_lower = query.lower()
 
     if conversation:
@@ -158,7 +164,7 @@ def _search_messages(
         display = data["display_names"].get(cid, cid)
         conv_type = data["conversations"].get(cid, {}).get("type", "Unknown")
         for msg in data["messages_by_conv"].get(cid, []):
-            if query_lower in (msg.get("content") or "").lower():
+            if query_lower in _strip_html(msg.get("content") or "").lower():
                 results.append({
                     **msg,
                     "content": _strip_html(msg.get("content") or ""),
@@ -168,6 +174,7 @@ def _search_messages(
 
     return {
         "query": query,
+        "totalCount": len(results),
         "resultCount": len(results[:limit]),
         "results": results[:limit],
     }
@@ -196,6 +203,8 @@ def search_messages(
 
 def _get_conversation_summary(cache: TeamsCache, conversation: str) -> dict:
     data = cache.get()
+    if "error" in data:
+        return {"error": f"Failed to load Teams data: {data['error']}"}
     conv_id = _find_conversation_id(data, conversation)
     if conv_id is None:
         return {"error": f"Conversation not found: {conversation!r}"}

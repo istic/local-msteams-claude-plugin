@@ -157,6 +157,26 @@ def test_search_unknown_conversation_returns_error():
     assert "error" in result
 
 
+def test_search_does_not_match_html_tags():
+    import copy
+    from unittest.mock import MagicMock
+    from tests.conftest import FIXTURE as F
+    data = copy.deepcopy(F)
+    data["messages_by_conv"]["19:sp1@thread.skype"][0]["content"] = '<p class="msg">Hello</p>'
+    c = MagicMock()
+    c.get.return_value = data
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(c, "class")
+    assert result["resultCount"] == 0  # should not match HTML attributes
+
+
+def test_search_total_count_field():
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(_cache(), "project")
+    assert "totalCount" in result
+    assert result["totalCount"] >= result["resultCount"]
+
+
 # --- get_conversation_summary ---
 
 def test_summary_returns_metadata():

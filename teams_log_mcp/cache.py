@@ -46,7 +46,18 @@ class TeamsCache:
 
     def get(self) -> dict:
         if self._is_stale():
-            self._load()
+            try:
+                self._load()
+            except Exception as exc:
+                self._data = {
+                    "error": str(exc),
+                    "conversations": {},
+                    "messages_by_conv": {},
+                    "display_names": {},
+                    "channels": {},
+                    "user_map": {},
+                }
+                self._loaded_at = 0.0  # don't cache the error; retry next call
         return self._data
 
     def invalidate(self) -> None:

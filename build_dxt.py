@@ -17,13 +17,16 @@ INCLUDE = [
 ]
 
 _SKIP_SUFFIXES = {".pyc"}
-_SKIP_DIR_NAMES = {"__pycache__", ".git", ".egg-info", "build"}
+_SKIP_DIR_NAMES = {"__pycache__", ".git", "build"}
 
 
 def _should_skip(path: pathlib.Path) -> bool:
     if path.suffix in _SKIP_SUFFIXES:
         return True
-    return any(part in _SKIP_DIR_NAMES for part in path.parts)
+    return any(
+        part in _SKIP_DIR_NAMES or part.endswith(".egg-info")
+        for part in path.parts
+    )
 
 
 def main() -> None:
