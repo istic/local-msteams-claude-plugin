@@ -1,0 +1,53 @@
+{
+  "dxt_version": "0.1",
+  "name": "teams-log",
+  "display_name": "Microsoft Teams Log",
+  "version": "0.1.0",
+  "description": "Access your Microsoft Teams conversation history from Claude Desktop",
+  "author": {
+    "name": "Nicholas Avenell",
+    "email": "nicholas@learningonscreen.ac.uk"
+  },
+  "server": {
+    "type": "stdio",
+    "command": "uv",
+    "args": [
+      "--directory",
+      "${__dirname}",
+      "run",
+      "python",
+      "-m",
+      "teams_log_mcp"
+    ],
+    "env": {
+      "TEAMS_ROOT": "${user_config.teams_root}"
+    }
+  },
+  "user_config": {
+    "teams_root": {
+      "type": "string",
+      "title": "Teams Data Path",
+      "description": "Path to your Teams WV2Profile_tfw directory.\nWindows: C:\\Users\\<you>\\AppData\\Local\\Packages\\MSTeams_8wekyb3d8bbwe\\LocalCache\\Microsoft\\MSTeams\\EBWebView\\WV2Profile_tfw\nmacOS: ~/Library/Containers/com.microsoft.teams2/Data/Library/Application Support/Microsoft/MSTeams/EBWebView/WV2Profile_tfw",
+      "required": true,
+      "sensitive": false
+    }
+  },
+  "tools": [
+    {
+      "name": "list_conversations",
+      "description": "List all Teams chats, channels, and meetings with metadata"
+    },
+    {
+      "name": "get_messages",
+      "description": "Get messages from a conversation by name or ID"
+    },
+    {
+      "name": "search_messages",
+      "description": "Search for messages across all conversations"
+    },
+    {
+      "name": "get_conversation_summary",
+      "description": "Get a summary of a conversation including participants and recent messages"
+    }
+  ]
+}
