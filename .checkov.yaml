@@ -1,0 +1,4 @@
+framework:
+  - sast_python
+  - github_actions
+quiet: true

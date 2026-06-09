@@ -1,12 +1,15 @@
 from unittest.mock import MagicMock, patch
-from tests.conftest import FIXTURE
+
 from teams_log_mcp.cache import TeamsCache
+from tests.conftest import FIXTURE
 
 
 def _mock_exporter():
     e = MagicMock()
     e.load_channel_names.return_value = dict(FIXTURE["channels"])
-    e.load_conversations.return_value = {k: dict(v) for k, v in FIXTURE["conversations"].items()}
+    e.load_conversations.return_value = {
+        k: dict(v) for k, v in FIXTURE["conversations"].items()
+    }
     e.load_messages.return_value = {
         k: [dict(m) for m in v] for k, v in FIXTURE["messages_by_conv"].items()
     }
@@ -60,4 +63,10 @@ def test_data_contains_expected_keys():
     with patch("teams_log_mcp.cache.TeamsExporter", return_value=mock):
         cache = TeamsCache("/fake")
         data = cache.get()
-    assert set(data.keys()) == {"channels", "conversations", "messages_by_conv", "user_map", "display_names"}
+    assert set(data.keys()) == {
+        "channels",
+        "conversations",
+        "messages_by_conv",
+        "user_map",
+        "display_names",
+    }

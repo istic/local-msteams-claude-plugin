@@ -1,10 +1,12 @@
 import os
+
 import pytest
 
 
 @pytest.mark.skipif(not os.environ.get("TEAMS_ROOT"), reason="TEAMS_ROOT not set")
 def test_smoke_load_from_real_db():
     from teams_log_mcp.cache import TeamsCache
+
     cache = TeamsCache(os.environ["TEAMS_ROOT"])
     data = cache.get()
     assert isinstance(data["conversations"], dict)
