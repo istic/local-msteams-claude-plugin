@@ -18,21 +18,49 @@ _TYPE_ORDER = ["Space", "Topic", "Chat", "Meeting", "Thread"]
 
 
 def _default_teams_root() -> str:
-    """Return the default Teams WV2Profile_tfw path for the current OS."""
+    """Return the default Teams WV2Profile_tfw path for the current OS.
+
+    Tries the known package path first; falls back to globbing for WV2Profile_tfw
+    in case the package name/identifier has changed.
+    """
     system = platform.system()
+
     if system == "Darwin":
-        return str(
-            pathlib.Path.home()
+        home = pathlib.Path.home()
+        candidate = (
+            home
             / "Library/Containers/com.microsoft.teams2/Data/Library"
             / "Application Support/Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
         )
+        if candidate.exists():
+            return str(candidate)
+        matches = sorted(
+            (home / "Library/Containers").glob(
+                "*/Data/Library/Application Support"
+                "/Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+            )
+        )
+        return str(matches[0]) if matches else ""
+
     if system == "Windows":
         local_app_data = os.environ.get("LOCALAPPDATA", "")
-        return str(
-            pathlib.Path(local_app_data)
+        if not local_app_data:
+            return ""
+        base = pathlib.Path(local_app_data)
+        candidate = (
+            base
             / "Packages/MSTeams_8wekyb3d8bbwe/LocalCache"
             / "Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
         )
+        if candidate.exists():
+            return str(candidate)
+        matches = sorted(
+            (base / "Packages").glob(
+                "MSTeams_*/LocalCache/Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+            )
+        )
+        return str(matches[0]) if matches else ""
+
     return ""
 
 
@@ -71,6 +99,7 @@ def _strip_content(messages: list[dict]) -> list[dict]:
 
 # --- list_conversations ---
 
+
 def _list_conversations(cache: TeamsCache) -> dict:
     data = cache.get()
     if "error" in data:
@@ -81,20 +110,24 @@ def _list_conversations(cache: TeamsCache) -> dict:
         if not msgs:
             continue
         timestamps = [m["timestamp"] for m in msgs if m.get("timestamp")]
-        result.append({
-            "id": conv_id,
-            "type": conv["type"],
-            "displayName": data["display_names"].get(conv_id, conv_id),
-            "messageCount": len(msgs),
-            "dateRange": {
-                "first": min(timestamps) if timestamps else None,
-                "last": max(timestamps) if timestamps else None,
-            },
-        })
-    result.sort(key=lambda c: (
-        _TYPE_ORDER.index(c["type"]) if c["type"] in _TYPE_ORDER else 99,
-        c["displayName"].lower(),
-    ))
+        result.append(
+            {
+                "id": conv_id,
+                "type": conv["type"],
+                "displayName": data["display_names"].get(conv_id, conv_id),
+                "messageCount": len(msgs),
+                "dateRange": {
+                    "first": min(timestamps) if timestamps else None,
+                    "last": max(timestamps) if timestamps else None,
+                },
+            }
+        )
+    result.sort(
+        key=lambda c: (
+            _TYPE_ORDER.index(c["type"]) if c["type"] in _TYPE_ORDER else 99,
+            c["displayName"].lower(),
+        )
+    )
     return {"conversations": result}
 
 
@@ -108,6 +141,7 @@ def list_conversations() -> dict:
 
 
 # --- get_messages ---
+
 
 def _get_messages(
     cache: TeamsCache,
@@ -128,10 +162,14 @@ def _get_messages(
         msgs = [m for m in msgs if m.get("timestamp") and m["timestamp"] > after]
     if before:
         msgs = [m for m in msgs if m.get("timestamp") and m["timestamp"] < before]
-    msgs = msgs[:min(limit, 500)]
+    msgs = msgs[: min(limit, 500)]
 
     display = data["display_names"].get(conv_id, conv_id)
-    note = f"Matched '{display}' for query {conversation!r}" if conv_id != conversation else None
+    note = (
+        f"Matched '{display}' for query {conversation!r}"
+        if conv_id != conversation
+        else None
+    )
 
     return {
         "conversationId": conv_id,
@@ -165,6 +203,7 @@ def get_messages(
 
 # --- search_messages ---
 
+
 def _search_messages(
     cache: TeamsCache,
     query: str,
@@ -190,12 +229,14 @@ def _search_messages(
         conv_type = data["conversations"].get(cid, {}).get("type", "Unknown")
         for msg in data["messages_by_conv"].get(cid, []):
             if query_lower in _strip_html(msg.get("content") or "").lower():
-                results.append({
-                    **msg,
-                    "content": _strip_html(msg.get("content") or ""),
-                    "conversationDisplayName": display,
-                    "conversationType": conv_type,
-                })
+                results.append(
+                    {
+                        **msg,
+                        "content": _strip_html(msg.get("content") or ""),
+                        "conversationDisplayName": display,
+                        "conversationType": conv_type,
+                    }
+                )
 
     return {
         "query": query,
@@ -226,6 +267,7 @@ def search_messages(
 
 # --- get_conversation_summary ---
 
+
 def _get_conversation_summary(cache: TeamsCache, conversation: str) -> dict:
     data = cache.get()
     if "error" in data:
@@ -247,7 +289,11 @@ def _get_conversation_summary(cache: TeamsCache, conversation: str) -> dict:
             participants.append(s)
             seen.add(s)
 
-    note = f"Matched '{display}' for query {conversation!r}" if conv_id != conversation else None
+    note = (
+        f"Matched '{display}' for query {conversation!r}"
+        if conv_id != conversation
+        else None
+    )
 
     return {
         "conversationId": conv_id,
@@ -266,7 +312,9 @@ def _get_conversation_summary(cache: TeamsCache, conversation: str) -> dict:
 
 @mcp.tool()
 def get_conversation_summary(conversation: str) -> dict:
-    """Get a summary of a Teams conversation: participants, message count, date range, and 5 most recent messages.
+    """Get a summary of a Teams conversation.
+
+    Returns participants, message count, date range, and the 5 most recent messages.
 
     Args:
         conversation: Conversation ID (exact) or display name (case-insensitive substring).

@@ -70,3 +70,60 @@ def test_data_contains_expected_keys():
         "user_map",
         "display_names",
     }
+
+
+# --- error handling ---
+
+
+def test_load_failure_returns_error_sentinel():
+    mock = _mock_exporter()
+    mock.load_channel_names.side_effect = ValueError("corrupted DB")
+    with patch("teams_log_mcp.cache.TeamsExporter", return_value=mock):
+        cache = TeamsCache("/fake")
+        data = cache.get()
+    assert "error" in data
+    assert "corrupted DB" in data["error"]
+
+
+def test_load_resolves_sender_name_from_user_map():
+    mock = _mock_exporter()
+    # Message where sender field equals the raw senderId — should be resolved
+    messages = {
+        "conv1": [
+            {
+                "id": "m1",
+                "conversationId": "conv1",
+                "timestamp": "2024-01-01T00:00:00+00:00",
+                "sender": "8:orgid:abc123",  # raw ID, not a display name
+                "senderId": "8:orgid:abc123",
+                "content": "hi",
+                "contentType": "text",
+                "messageType": "RichText/Html",
+                "threadType": "",
+                "parentMessageId": None,
+            }
+        ]
+    }
+    mock.load_messages.return_value = messages
+    mock.build_user_map.return_value = {"8:orgid:abc123": "Alice"}
+    mock.compute_display_names.return_value = {"conv1": "conv1"}
+    with patch("teams_log_mcp.cache.TeamsExporter", return_value=mock):
+        cache = TeamsCache("/fake")
+        data = cache.get()
+    assert data["messages_by_conv"]["conv1"][0]["sender"] == "Alice"
+
+
+def test_error_is_not_cached_retries_next_call():
+    mock = _mock_exporter()
+    # First call raises, second succeeds
+    mock.load_channel_names.side_effect = [
+        ValueError("oops"),
+        dict(FIXTURE["channels"]),
+    ]
+    with patch("teams_log_mcp.cache.TeamsExporter", return_value=mock):
+        cache = TeamsCache("/fake")
+        first = cache.get()
+        second = cache.get()
+    assert "error" in first
+    assert "error" not in second
+    assert "conversations" in second

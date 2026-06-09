@@ -262,3 +262,190 @@ def test_summary_not_found_returns_error():
 
     result = _get_conversation_summary(_cache(), "zzznope")
     assert "error" in result
+
+
+# --- _strip_html ---
+
+
+def test_strip_html_handles_bytes():
+    from teams_log_mcp.server import _strip_html
+
+    assert _strip_html(b"<p>Hello <b>world</b></p>") == "Hello world"
+
+
+def test_strip_html_handles_empty_bytes():
+    from teams_log_mcp.server import _strip_html
+
+    assert _strip_html(b"") == ""
+
+
+# --- _default_teams_root ---
+
+
+def test_default_teams_root_macos_hardcoded_path(tmp_path):
+    import pathlib
+    from unittest.mock import patch
+
+    from teams_log_mcp.server import _default_teams_root
+
+    profile = (
+        tmp_path
+        / "Library/Containers/com.microsoft.teams2/Data/Library"
+        / "Application Support/Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+    )
+    profile.mkdir(parents=True)
+    with (
+        patch("platform.system", return_value="Darwin"),
+        patch("pathlib.Path.home", return_value=tmp_path),
+    ):
+        result = _default_teams_root()
+    assert pathlib.Path(result) == profile
+
+
+def test_default_teams_root_macos_fallback_glob(tmp_path):
+    import pathlib
+    from unittest.mock import patch
+
+    from teams_log_mcp.server import _default_teams_root
+
+    # Different container name — hardcoded path won't exist
+    profile = (
+        tmp_path
+        / "Library/Containers/com.microsoft.teams-alt/Data/Library"
+        / "Application Support/Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+    )
+    profile.mkdir(parents=True)
+    with (
+        patch("platform.system", return_value="Darwin"),
+        patch("pathlib.Path.home", return_value=tmp_path),
+    ):
+        result = _default_teams_root()
+    assert pathlib.Path(result) == profile
+
+
+def test_default_teams_root_macos_not_found(tmp_path):
+    from unittest.mock import patch
+
+    from teams_log_mcp.server import _default_teams_root
+
+    with (
+        patch("platform.system", return_value="Darwin"),
+        patch("pathlib.Path.home", return_value=tmp_path),
+    ):
+        result = _default_teams_root()
+    assert result == ""
+
+
+def test_default_teams_root_windows_hardcoded_path(tmp_path):
+    import os
+    import pathlib
+    from unittest.mock import patch
+
+    from teams_log_mcp.server import _default_teams_root
+
+    profile = (
+        tmp_path
+        / "Packages/MSTeams_8wekyb3d8bbwe/LocalCache"
+        / "Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+    )
+    profile.mkdir(parents=True)
+    with (
+        patch("platform.system", return_value="Windows"),
+        patch.dict(os.environ, {"LOCALAPPDATA": str(tmp_path)}),
+    ):
+        result = _default_teams_root()
+    assert pathlib.Path(result) == profile
+
+
+def test_default_teams_root_windows_fallback_glob(tmp_path):
+    import os
+    import pathlib
+    from unittest.mock import patch
+
+    from teams_log_mcp.server import _default_teams_root
+
+    # Different package string — hardcoded path won't exist
+    profile = (
+        tmp_path
+        / "Packages/MSTeams_newstring123/LocalCache"
+        / "Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+    )
+    profile.mkdir(parents=True)
+    with (
+        patch("platform.system", return_value="Windows"),
+        patch.dict(os.environ, {"LOCALAPPDATA": str(tmp_path)}),
+    ):
+        result = _default_teams_root()
+    assert pathlib.Path(result) == profile
+
+
+def test_default_teams_root_windows_no_localappdata():
+    import os
+    from unittest.mock import patch
+
+    from teams_log_mcp.server import _default_teams_root
+
+    with (
+        patch("platform.system", return_value="Windows"),
+        patch.dict(os.environ, {"LOCALAPPDATA": ""}),
+    ):
+        assert _default_teams_root() == ""
+
+
+def test_default_teams_root_unknown_os():
+    from unittest.mock import patch
+
+    from teams_log_mcp.server import _default_teams_root
+
+    with patch("platform.system", return_value="Linux"):
+        assert _default_teams_root() == ""
+
+
+# --- cache error propagation ---
+
+_ERROR_DATA = {
+    "error": "DB load failed",
+    "conversations": {},
+    "messages_by_conv": {},
+    "display_names": {},
+    "channels": {},
+    "user_map": {},
+}
+
+
+def _error_cache():
+    c = MagicMock()
+    c.get.return_value = _ERROR_DATA
+    return c
+
+
+def test_list_conversations_propagates_cache_error():
+    from teams_log_mcp.server import _list_conversations
+
+    result = _list_conversations(_error_cache())
+    assert "error" in result
+    assert "DB load failed" in result["error"]
+
+
+def test_get_messages_propagates_cache_error():
+    from teams_log_mcp.server import _get_messages
+
+    result = _get_messages(_error_cache(), "anything")
+    assert "error" in result
+    assert "DB load failed" in result["error"]
+
+
+def test_search_messages_propagates_cache_error():
+    from teams_log_mcp.server import _search_messages
+
+    result = _search_messages(_error_cache(), "anything")
+    assert "error" in result
+    assert "DB load failed" in result["error"]
+
+
+def test_get_conversation_summary_propagates_cache_error():
+    from teams_log_mcp.server import _get_conversation_summary
+
+    result = _get_conversation_summary(_error_cache(), "anything")
+    assert "error" in result
+    assert "DB load failed" in result["error"]
