@@ -1,6 +1,6 @@
 [project]
 name = "teams-log-export"
-version = "0.1.0"
+version = "1.0.0"
 description = "Export Microsoft Teams chat and channel logs"
 authors = [
     {name = "Nicholas Avenell"}
