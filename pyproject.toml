@@ -8,14 +8,11 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "brotli (>=1.2.0,<2.0.0)",
-    "python-dotenv (>=1.2.2,<2.0.0)",
     "mcp (>=1.0.0)",
     "ccl_chromium_reader @ git+https://github.com/cclgroupltd/ccl_chromium_reader.git",
 ]
 
 [project.scripts]
-teams-export = "teams_log_export.__main__:main"
-teams-mcp = "teams_log_mcp.__main__:main"
 build-dxt = "build_dxt:main"
 
 [tool.poetry]

@@ -67,7 +67,7 @@ def _default_teams_root() -> str:
 def _get_cache() -> TeamsCache | None:
     global _cache
     if _cache is None:
-        teams_root = os.environ.get("TEAMS_ROOT", "").strip() or _default_teams_root()
+        teams_root = _default_teams_root()
         if not teams_root:
             return None
         _cache = TeamsCache(teams_root)
