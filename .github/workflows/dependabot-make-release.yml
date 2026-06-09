@@ -91,6 +91,6 @@ jobs:
       (github.event_name == 'workflow_dispatch' || needs.check-for-updates.outputs.has_updates == 'true')
     permissions:
       contents: write
-    uses: istic/local-msteams-claude-plugin/.github/workflows/deploy-create-release-tag.yml@main
+    uses: ./.github/workflows/deploy-create-release-tag.yml
     with:
       version_bump: ${{ needs.check-for-updates.outputs.version_bump }}

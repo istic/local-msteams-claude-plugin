@@ -91,7 +91,7 @@ jobs:
     needs: [tag]
     permissions:
       contents: write
-    uses: istic/local-msteams-claude-plugin/.github/workflows/release.yml@main
+    uses: ./.github/workflows/release.yml
     with:
       deploy_version: ${{ needs.tag.outputs.next_version }}
     secrets: inherit # pragma: allowlist secret
