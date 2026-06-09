@@ -6,6 +6,7 @@ import pathlib
 import zipfile
 
 ROOT = pathlib.Path(__file__).parent
+BUILD_DIR = ROOT / "build"
 
 # Files included in both archives
 _COMMON = [
@@ -51,8 +52,9 @@ def _build(output: pathlib.Path, include: list[str]) -> None:
 
 
 def main() -> None:
-    _build(ROOT / "teams-log.mcpb", _COMMON + _MCPB_ONLY)
-    _build(ROOT / "teams-log.zip", _COMMON + _PLUGIN_ONLY)
+    BUILD_DIR.mkdir(exist_ok=True)
+    _build(BUILD_DIR / "teams-log.mcpb", _COMMON + _MCPB_ONLY)
+    _build(BUILD_DIR / "teams-log.zip", _COMMON + _PLUGIN_ONLY)
 
 
 if __name__ == "__main__":
