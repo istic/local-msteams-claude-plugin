@@ -34,14 +34,18 @@ jobs:
             echo "tag=${{ inputs.deploy_version }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Validate version matches tag
+      - name: Set version from tag
         run: |
-          TAG="${{ steps.tag.outputs.tag }}"
-          VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
-          if [ "$TAG" != "v$VERSION" ]; then
-            echo "Error: tag $TAG does not match pyproject.toml version $VERSION"
-            exit 1
-          fi
+          VERSION="${{ steps.tag.outputs.tag }}"
+          VERSION="${VERSION#v}"
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          python3 -c "
+          import json, pathlib
+          f = pathlib.Path('manifest.json')
+          d = json.loads(f.read_text())
+          d['version'] = '$VERSION'
+          f.write_text(json.dumps(d, indent=2, sort_keys=True) + '\n')
+          "
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
