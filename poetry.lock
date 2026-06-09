@@ -169,8 +169,10 @@ Brotli = "*"
 ccl_simplesnappy = {git = "https://github.com/cclgroupltd/ccl_simplesnappy.git"}
 
 [package.source]
-type = "directory"
-url = "pylib/ccl_chromium_reader"
+type = "git"
+url = "https://github.com/cclgroupltd/ccl_chromium_reader.git"
+reference = "HEAD"
+resolved_reference = "b51a01c913799f5af2735f964d4627275369e90e"
 
 [[package]]
 name = "ccl-simplesnappy"
@@ -1211,4 +1213,4 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.8.0)
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "bd491b180ee8f4c8460620058bb854a5960c7cdeee7683e46d62ac7299a76865"
+content-hash = "60f9a5211fe5e3eb4078744ec42b6fcc2f0ea010ae2024fcb24c35eddee8f452"

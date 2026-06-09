@@ -13,7 +13,6 @@ _COMMON = [
     "pyproject.toml",
     "teams_log_mcp",
     "teams_log_export",
-    "pylib/ccl_chromium_reader",
 ]
 
 # Additional files per archive type
@@ -28,8 +27,7 @@ def _should_skip(path: pathlib.Path) -> bool:
     if path.suffix in _SKIP_SUFFIXES:
         return True
     return any(
-        part in _SKIP_DIR_NAMES or part.endswith(".egg-info")
-        for part in path.parts
+        part in _SKIP_DIR_NAMES or part.endswith(".egg-info") for part in path.parts
     )
 
 

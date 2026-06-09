@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "teams-log": {
+      "args": [
+        "--directory",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "run",
+        "python",
+        "-m",
+        "teams_log_mcp"
+      ],
+      "command": "uv"
+    }
+  }
+}

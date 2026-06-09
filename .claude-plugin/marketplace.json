@@ -1,0 +1,14 @@
+{
+  "name": "teams-log-local",
+  "owner": {
+    "email": "nicholas@learningonscreen.ac.uk",
+    "name": "Nicholas Avenell"
+  },
+  "plugins": [
+    {
+      "description": "Access Microsoft Teams conversation history",
+      "name": "teams-log",
+      "source": "./"
+    }
+  ]
+}
