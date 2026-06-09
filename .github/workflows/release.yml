@@ -4,29 +4,64 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      deploy_version:
+        description: "Version to deploy (e.g. v1.2.3)"
+        required: true
+  workflow_call:
+    inputs:
+      deploy_version:
+        description: "Tag to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.deploy_version }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --group dev
 
-      - name: Build plugin and extension artifacts
+      - name: Run tests
+        run: uv run pytest tests/ --ignore=tests/test_integration.py -q
+
+      - name: Build artifacts
         run: uv run build-dxt
 
-      - name: Create GitHub release with artifacts
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          draft: true
+          make_latest: false
+          files: |
+            build/teams-log.zip
+            build/teams-log.mcpb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            --generate-notes \
-            "build/teams-log.zip#Claude Code plugin (.zip)" \
-            "build/teams-log.mcpb#Claude Desktop extension (.mcpb)"
+
+      - name: Publish release
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
+        run: gh release edit ${{ steps.tag.outputs.tag }} --draft=false --latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
