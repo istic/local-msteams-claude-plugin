@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import pathlib
+import platform
 import re
 
 from mcp.server.fastmcp import FastMCP
@@ -15,10 +17,29 @@ _cache: TeamsCache | None = None
 _TYPE_ORDER = ["Space", "Topic", "Chat", "Meeting", "Thread"]
 
 
+def _default_teams_root() -> str:
+    """Return the default Teams WV2Profile_tfw path for the current OS."""
+    system = platform.system()
+    if system == "Darwin":
+        return str(
+            pathlib.Path.home()
+            / "Library/Containers/com.microsoft.teams2/Data/Library"
+            / "Application Support/Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+        )
+    if system == "Windows":
+        local_app_data = os.environ.get("LOCALAPPDATA", "")
+        return str(
+            pathlib.Path(local_app_data)
+            / "Packages/MSTeams_8wekyb3d8bbwe/LocalCache"
+            / "Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+        )
+    return ""
+
+
 def _get_cache() -> TeamsCache | None:
     global _cache
     if _cache is None:
-        teams_root = os.environ.get("TEAMS_ROOT", "").strip()
+        teams_root = os.environ.get("TEAMS_ROOT", "").strip() or _default_teams_root()
         if not teams_root:
             return None
         _cache = TeamsCache(teams_root)

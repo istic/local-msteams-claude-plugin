@@ -1,0 +1,10 @@
+{
+  "name": "teams-log",
+  "version": "0.1.0",
+  "description": "Access Microsoft Teams conversation history — search messages, list chats and channels, retrieve conversation context.",
+  "author": {
+    "name": "Nicholas Avenell",
+    "email": "nicholas@learningonscreen.ac.uk"
+  },
+  "keywords": ["teams", "microsoft", "conversations", "chat", "search"]
+}
