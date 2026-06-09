@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Build teams-log distribution archives."""
+"""Build teams-log distribution archives (Claude Code plugin zip and Claude Desktop mcpb)."""
+
 from __future__ import annotations
 
 import pathlib
@@ -26,9 +27,7 @@ _SKIP_DIR_NAMES = {"__pycache__", ".git", "build"}
 def _should_skip(path: pathlib.Path) -> bool:
     if path.suffix in _SKIP_SUFFIXES:
         return True
-    return any(
-        part in _SKIP_DIR_NAMES or part.endswith(".egg-info") for part in path.parts
-    )
+    return any(part in _SKIP_DIR_NAMES or part.endswith(".egg-info") for part in path.parts)
 
 
 def _build(output: pathlib.Path, include: list[str]) -> None:

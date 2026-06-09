@@ -36,8 +36,7 @@ def _default_teams_root() -> str:
             return str(candidate)
         matches = sorted(
             (home / "Library/Containers").glob(
-                "*/Data/Library/Application Support"
-                "/Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
+                "*/Data/Library/Application Support/Microsoft/MSTeams/EBWebView/WV2Profile_tfw"
             )
         )
         return str(matches[0]) if matches else ""
@@ -165,11 +164,7 @@ def _get_messages(
     msgs = msgs[: min(limit, 500)]
 
     display = data["display_names"].get(conv_id, conv_id)
-    note = (
-        f"Matched '{display}' for query {conversation!r}"
-        if conv_id != conversation
-        else None
-    )
+    note = f"Matched '{display}' for query {conversation!r}" if conv_id != conversation else None
 
     return {
         "conversationId": conv_id,
@@ -289,11 +284,7 @@ def _get_conversation_summary(cache: TeamsCache, conversation: str) -> dict:
             participants.append(s)
             seen.add(s)
 
-    note = (
-        f"Matched '{display}' for query {conversation!r}"
-        if conv_id != conversation
-        else None
-    )
+    note = f"Matched '{display}' for query {conversation!r}" if conv_id != conversation else None
 
     return {
         "conversationId": conv_id,

@@ -41,9 +41,7 @@ def _ms_to_iso(ts: Any) -> str | None:
         ts_float = float(ts)
         if ts_float <= 0:
             return None
-        dt = datetime.datetime.fromtimestamp(
-            ts_float / 1000.0, tz=datetime.timezone.utc
-        )
+        dt = datetime.datetime.fromtimestamp(ts_float / 1000.0, tz=datetime.timezone.utc)
         return dt.isoformat()
     except (ValueError, TypeError, OSError):
         return None
@@ -67,9 +65,7 @@ class TeamsExporter:
     def __init__(self, teams_root: str | pathlib.Path):
         self.teams_root = pathlib.Path(teams_root)
         self._idb_base = self.teams_root / "IndexedDB"
-        self._leveldb_path = (
-            self._idb_base / "https_teams.microsoft.com_0.indexeddb.leveldb"
-        )
+        self._leveldb_path = self._idb_base / "https_teams.microsoft.com_0.indexeddb.leveldb"
         self._blob_path = self._idb_base / "https_teams.microsoft.com_0.indexeddb.blob"
         self._wrapper: ccl_chromium_indexeddb.WrappedIndexDB | None = None
 
@@ -80,9 +76,7 @@ class TeamsExporter:
             )
         return self._wrapper
 
-    def _find_db(
-        self, name_pattern: str
-    ) -> list[ccl_chromium_indexeddb.WrappedDatabase]:
+    def _find_db(self, name_pattern: str) -> list[ccl_chromium_indexeddb.WrappedDatabase]:
         """Return all databases whose name contains name_pattern."""
         wrapper = self._get_wrapper()
         matches = []
@@ -92,9 +86,7 @@ class TeamsExporter:
                 matches.append(db)
         return matches
 
-    def _iter_store_records(
-        self, db: ccl_chromium_indexeddb.WrappedDatabase, store_name: str
-    ):
+    def _iter_store_records(self, db: ccl_chromium_indexeddb.WrappedDatabase, store_name: str):
         """Yield (record.key, record.value, record.ldb_seq_no) for all live records."""
         try:
             store = db[store_name]
@@ -115,9 +107,7 @@ class TeamsExporter:
     def load_channel_names(self) -> dict[str, dict]:
         channels: dict[str, dict] = {}
         for db in self._find_db("get-all-channels-manager"):
-            for record in self._iter_store_records(
-                db, "get-all-channels-manager-cache-store"
-            ):
+            for record in self._iter_store_records(db, "get-all-channels-manager-cache-store"):
                 val = record.value
                 if not isinstance(val, dict):
                     continue
@@ -401,16 +391,10 @@ class TeamsExporter:
             # Determine output subdirectory
             if conv_type in ("Topic",) or (conv_id in channels):
                 # Channel (topic in a team)
-                team_id = (
-                    conv.get("teamId")
-                    or channels.get(conv_id, {}).get("teamThreadId")
-                    or ""
-                )
+                team_id = conv.get("teamId") or channels.get(conv_id, {}).get("teamThreadId") or ""
                 team_name = team_names.get(team_id) or "Unknown Team"
                 subdir = output_dir / "channels" / _safe_filename(team_name)
-                channel_name = (
-                    channels.get(conv_id, {}).get("displayName") or display_name
-                )
+                channel_name = channels.get(conv_id, {}).get("displayName") or display_name
             elif conv_type == "Space":
                 # The General channel of a team
                 team_id = conv_id

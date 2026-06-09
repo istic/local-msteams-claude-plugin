@@ -45,9 +45,7 @@ def test_list_conversations_date_range():
 def test_find_conversation_id_exact():
     from teams_log_mcp.server import _find_conversation_id
 
-    assert (
-        _find_conversation_id(FIXTURE, "19:sp1@thread.skype") == "19:sp1@thread.skype"
-    )
+    assert _find_conversation_id(FIXTURE, "19:sp1@thread.skype") == "19:sp1@thread.skype"
 
 
 def test_find_conversation_id_substring():
@@ -117,9 +115,7 @@ def test_get_messages_strips_html():
     from tests.conftest import FIXTURE as F
 
     data = copy.deepcopy(F)
-    data["messages_by_conv"]["19:sp1@thread.skype"][0][
-        "content"
-    ] = "<p>Hello <b>team</b></p>"
+    data["messages_by_conv"]["19:sp1@thread.skype"][0]["content"] = "<p>Hello <b>team</b></p>"
     c = MagicMock()
     c.get.return_value = data
     from teams_log_mcp.server import _get_messages
@@ -194,9 +190,7 @@ def test_search_does_not_match_html_tags():
     from tests.conftest import FIXTURE as F
 
     data = copy.deepcopy(F)
-    data["messages_by_conv"]["19:sp1@thread.skype"][0][
-        "content"
-    ] = '<p class="msg">Hello</p>'
+    data["messages_by_conv"]["19:sp1@thread.skype"][0]["content"] = '<p class="msg">Hello</p>'
     c = MagicMock()
     c.get.return_value = data
     from teams_log_mcp.server import _search_messages

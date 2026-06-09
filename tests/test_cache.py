@@ -7,9 +7,7 @@ from tests.conftest import FIXTURE
 def _mock_exporter():
     e = MagicMock()
     e.load_channel_names.return_value = dict(FIXTURE["channels"])
-    e.load_conversations.return_value = {
-        k: dict(v) for k, v in FIXTURE["conversations"].items()
-    }
+    e.load_conversations.return_value = {k: dict(v) for k, v in FIXTURE["conversations"].items()}
     e.load_messages.return_value = {
         k: [dict(m) for m in v] for k, v in FIXTURE["messages_by_conv"].items()
     }
