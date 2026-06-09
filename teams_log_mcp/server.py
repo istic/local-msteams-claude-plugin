@@ -57,8 +57,12 @@ def _find_conversation_id(data: dict, conversation: str) -> str | None:
     return None
 
 
-def _strip_html(html: str) -> str:
-    return re.sub(r"<[^>]+>", "", html).strip() if html else ""
+def _strip_html(html: str | bytes) -> str:
+    if not html:
+        return ""
+    if isinstance(html, bytes):
+        html = html.decode("utf-8", errors="replace")
+    return re.sub(r"<[^>]+>", "", html).strip()
 
 
 def _strip_content(messages: list[dict]) -> list[dict]:
