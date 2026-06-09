@@ -132,3 +132,61 @@ def get_messages(
     if cache is None:
         return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
     return _get_messages(cache, conversation, limit=limit, before=before, after=after)
+
+
+# --- search_messages ---
+
+def _search_messages(
+    cache: TeamsCache,
+    query: str,
+    conversation: str | None = None,
+    limit: int = 50,
+) -> dict:
+    data = cache.get()
+    query_lower = query.lower()
+
+    if conversation:
+        conv_id = _find_conversation_id(data, conversation)
+        if conv_id is None:
+            return {"error": f"Conversation not found: {conversation!r}"}
+        search_ids = [conv_id]
+    else:
+        search_ids = list(data["messages_by_conv"].keys())
+
+    results = []
+    for cid in search_ids:
+        display = data["display_names"].get(cid, cid)
+        conv_type = data["conversations"].get(cid, {}).get("type", "Unknown")
+        for msg in data["messages_by_conv"].get(cid, []):
+            if query_lower in (msg.get("content") or "").lower():
+                results.append({
+                    **msg,
+                    "content": _strip_html(msg.get("content") or ""),
+                    "conversationDisplayName": display,
+                    "conversationType": conv_type,
+                })
+
+    return {
+        "query": query,
+        "resultCount": len(results[:limit]),
+        "results": results[:limit],
+    }
+
+
+@mcp.tool()
+def search_messages(
+    query: str,
+    conversation: str | None = None,
+    limit: int = 50,
+) -> dict:
+    """Search for messages containing a string across Teams conversations.
+
+    Args:
+        query: Case-insensitive text to search for.
+        conversation: Optional conversation name or ID to restrict the search.
+        limit: Maximum results to return (default 50).
+    """
+    cache = _get_cache()
+    if cache is None:
+        return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
+    return _search_messages(cache, query, conversation=conversation, limit=limit)

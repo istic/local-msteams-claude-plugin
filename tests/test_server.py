@@ -104,3 +104,54 @@ def test_get_messages_strips_html():
     from teams_log_mcp.server import _get_messages
     result = _get_messages(c, "19:sp1@thread.skype")
     assert result["messages"][0]["content"] == "Hello team"
+
+
+# --- search_messages ---
+
+def test_search_finds_matches_across_convs():
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(_cache(), "project")
+    ids = [r["id"] for r in result["results"]]
+    assert "m1" in ids  # "project update needed" in Engineering
+    assert "m3" in ids  # "discuss the project" in chat
+
+
+def test_search_case_insensitive():
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(_cache(), "HELLO")
+    assert result["resultCount"] == 1
+    assert result["results"][0]["id"] == "m1"
+
+
+def test_search_with_conversation_filter():
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(_cache(), "project", conversation="engineering")
+    ids = [r["id"] for r in result["results"]]
+    assert "m1" in ids
+    assert "m3" not in ids
+
+
+def test_search_result_includes_conversation_context():
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(_cache(), "Hello")
+    assert result["results"][0]["conversationDisplayName"] == "Engineering"
+    assert result["results"][0]["conversationType"] == "Space"
+
+
+def test_search_no_results():
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(_cache(), "zzznomatch")
+    assert result["resultCount"] == 0
+    assert result["results"] == []
+
+
+def test_search_limit():
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(_cache(), "a", limit=1)
+    assert len(result["results"]) <= 1
+
+
+def test_search_unknown_conversation_returns_error():
+    from teams_log_mcp.server import _search_messages
+    result = _search_messages(_cache(), "hello", conversation="zzznope")
+    assert "error" in result
