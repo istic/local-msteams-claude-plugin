@@ -190,3 +190,54 @@ def search_messages(
     if cache is None:
         return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
     return _search_messages(cache, query, conversation=conversation, limit=limit)
+
+
+# --- get_conversation_summary ---
+
+def _get_conversation_summary(cache: TeamsCache, conversation: str) -> dict:
+    data = cache.get()
+    conv_id = _find_conversation_id(data, conversation)
+    if conv_id is None:
+        return {"error": f"Conversation not found: {conversation!r}"}
+
+    conv = data["conversations"].get(conv_id, {})
+    msgs = data["messages_by_conv"].get(conv_id, [])
+    display = data["display_names"].get(conv_id, conv_id)
+    timestamps = [m["timestamp"] for m in msgs if m.get("timestamp")]
+
+    participants: list[str] = []
+    seen: set[str] = set()
+    for m in msgs:
+        s = m.get("sender") or ""
+        if s and s not in seen:
+            participants.append(s)
+            seen.add(s)
+
+    note = f"Matched '{display}' for query {conversation!r}" if conv_id != conversation else None
+
+    return {
+        "conversationId": conv_id,
+        "displayName": display,
+        "type": conv.get("type", "Unknown"),
+        "note": note,
+        "messageCount": len(msgs),
+        "participants": participants,
+        "dateRange": {
+            "first": min(timestamps) if timestamps else None,
+            "last": max(timestamps) if timestamps else None,
+        },
+        "recentMessages": _strip_content(msgs[-5:]),
+    }
+
+
+@mcp.tool()
+def get_conversation_summary(conversation: str) -> dict:
+    """Get a summary of a Teams conversation: participants, message count, date range, and 5 most recent messages.
+
+    Args:
+        conversation: Conversation ID (exact) or display name (case-insensitive substring).
+    """
+    cache = _get_cache()
+    if cache is None:
+        return {"error": "TEAMS_ROOT not set. Check your extension configuration."}
+    return _get_conversation_summary(cache, conversation)

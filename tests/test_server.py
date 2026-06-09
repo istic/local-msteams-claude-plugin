@@ -155,3 +155,47 @@ def test_search_unknown_conversation_returns_error():
     from teams_log_mcp.server import _search_messages
     result = _search_messages(_cache(), "hello", conversation="zzznope")
     assert "error" in result
+
+
+# --- get_conversation_summary ---
+
+def test_summary_returns_metadata():
+    from teams_log_mcp.server import _get_conversation_summary
+    result = _get_conversation_summary(_cache(), "engineering")
+    assert result["conversationId"] == "19:sp1@thread.skype"
+    assert result["displayName"] == "Engineering"
+    assert result["type"] == "Space"
+    assert result["messageCount"] == 2
+
+
+def test_summary_includes_participants():
+    from teams_log_mcp.server import _get_conversation_summary
+    result = _get_conversation_summary(_cache(), "engineering")
+    assert "Alice" in result["participants"]
+    assert "Bob" in result["participants"]
+
+
+def test_summary_date_range():
+    from teams_log_mcp.server import _get_conversation_summary
+    result = _get_conversation_summary(_cache(), "engineering")
+    assert result["dateRange"]["first"] == "2024-01-15T10:00:00+00:00"
+    assert result["dateRange"]["last"] == "2024-01-15T10:05:00+00:00"
+
+
+def test_summary_recent_messages_max_5():
+    from teams_log_mcp.server import _get_conversation_summary
+    result = _get_conversation_summary(_cache(), "engineering")
+    assert len(result["recentMessages"]) <= 5
+
+
+def test_summary_includes_match_note():
+    from teams_log_mcp.server import _get_conversation_summary
+    result = _get_conversation_summary(_cache(), "engine")
+    assert result["note"] is not None
+    assert "Engineering" in result["note"]
+
+
+def test_summary_not_found_returns_error():
+    from teams_log_mcp.server import _get_conversation_summary
+    result = _get_conversation_summary(_cache(), "zzznope")
+    assert "error" in result
