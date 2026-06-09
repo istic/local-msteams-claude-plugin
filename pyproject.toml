@@ -1,0 +1,32 @@
+[project]
+name = "teams-log-export"
+version = "0.1.0"
+description = "Export Microsoft Teams chat and channel logs"
+authors = [
+    {name = "Nicholas Avenell"}
+]
+requires-python = ">=3.10"
+dependencies = [
+    "brotli (>=1.2.0,<2.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "mcp (>=1.0.0)",
+    "ccl_chromium_reader @ file:pylib/ccl_chromium_reader",
+]
+
+[project.scripts]
+teams-export = "teams_log_export.__main__:main"
+teams-mcp = "teams_log_mcp.__main__:main"
+build-dxt = "build_dxt:main"
+
+[tool.poetry]
+packages = [
+    {include = "teams_log_export"},
+    {include = "teams_log_mcp"},
+]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.0.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
