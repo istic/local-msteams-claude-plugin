@@ -6,7 +6,7 @@ import pathlib
 import zipfile
 
 ROOT = pathlib.Path(__file__).parent
-OUTPUT = ROOT / "teams-log.dxt"
+OUTPUT = ROOT / "teams-log.mcpb"
 
 INCLUDE = [
     "manifest.json",

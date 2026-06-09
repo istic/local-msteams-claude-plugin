@@ -1,5 +1,6 @@
 {
-  "dxt_version": "0.1",
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
   "name": "teams-log",
   "display_name": "Microsoft Teams Log",
   "version": "0.1.0",
@@ -9,28 +10,34 @@
     "email": "nicholas@learningonscreen.ac.uk"
   },
   "server": {
-    "type": "stdio",
-    "command": "uv",
-    "args": [
-      "--directory",
-      "${__dirname}",
-      "run",
-      "python",
-      "-m",
-      "teams_log_mcp"
-    ],
-    "env": {
-      "TEAMS_ROOT": "${user_config.teams_root}"
+    "type": "python",
+    "entry_point": "teams_log_mcp/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${__dirname}",
+        "run",
+        "python",
+        "-m",
+        "teams_log_mcp"
+      ],
+      "env": {
+        "TEAMS_ROOT": "${user_config.teams_root}"
+      }
     }
   },
   "user_config": {
     "teams_root": {
-      "type": "string",
+      "type": "directory",
       "title": "Teams Data Path",
       "description": "Path to your Teams WV2Profile_tfw directory.\nWindows: C:\\Users\\<you>\\AppData\\Local\\Packages\\MSTeams_8wekyb3d8bbwe\\LocalCache\\Microsoft\\MSTeams\\EBWebView\\WV2Profile_tfw\nmacOS: ~/Library/Containers/com.microsoft.teams2/Data/Library/Application Support/Microsoft/MSTeams/EBWebView/WV2Profile_tfw",
-      "required": true,
-      "sensitive": false
+      "required": true
     }
+  },
+  "compatibility": {
+    "claude_desktop": ">=1.0.0",
+    "platforms": ["darwin", "win32"]
   },
   "tools": [
     {
