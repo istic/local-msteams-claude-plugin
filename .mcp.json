@@ -3,7 +3,7 @@
     "teams-log": {
       "args": [
         "--directory",
-        "${CLAUDE_PLUGIN_ROOT}",
+        "${CLAUDE_PLUGIN_ROOT:-.}",
         "run",
         "python",
         "-m",
